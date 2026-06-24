@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kunlik Rejalar</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #f4f4f8;
+    --card: #ffffff;
+    --primary: #5b5ef4;
+    --primary-dark: #4345d4;
+    --danger: #f04545;
+    --success: #22c55e;
+    --text: #1a1a2e;
+    --muted: #888;
+    --border: #e8e8f0;
+    --radius: 14px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 100px;
+  }
+
+  .header {
+    background: var(--primary);
+    color: white;
+    padding: 20px 16px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .header h1 { font-size: 20px; font-weight: 700; }
+  .header p { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+
+  .tabs {
+    display: flex;
+    background: white;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 72px;
+    z-index: 9;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 12px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+  }
+
+  .content { padding: 16px; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ADD FORM */
+  .form-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+
+  .form-group { margin-bottom: 16px; }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  input[type="text"],
+  input[type="date"],
+  input[type="time"],
+  textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 15px;
+    color: var(--text);
+    background: #fafafa;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+
+  input:focus, textarea:focus {
+    border-color: var(--primary);
+    background: white;
+  }
+
+  textarea { resize: none; height: 80px; }
+
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .btn-add {
+    width: 100%;
+    padding: 14px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .btn-add:active { transform: scale(0.98); background: var(--primary-dark); }
+
+  .quick-dates {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .quick-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: white;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--text);
+    transition: all 0.2s;
+  }
+
+  .quick-btn.active, .quick-btn:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+
+  /* TASKS LIST */
+  .tasks-list { display: flex; flex-direction: column; gap: 12px; }
+
+  .task-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    border-left: 4px solid var(--primary);
+    position: relative;
+    transition: transform 0.15s;
+  }
+
+  .task-card.done {
+    border-left-color: var(--success);
+    opacity: 0.6;
+  }
+
+  .task-card.overdue { border-left-color: var(--danger); }
+
+  .task-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .task-title.done-text { text-decoration: line-through; }
+
+  .task-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .task-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .task-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .btn-done {
+    flex: 1;
+    padding: 8px;
+    background: #f0fdf4;
+    color: var(--success);
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .btn-delete {
+    padding: 8px 16px;
+    background: #fff5f5;
+    color: var(--danger);
+    border: 1px solid #fed7d7;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 15px; }
+  .empty-state small { font-size: 13px; display: block; margin-top: 6px; }
+
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .filter-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: white;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    color: var(--text);
+  }
+
+  .filter-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-left: 6px;
+  }
+
+  .badge-primary { background: #ede9ff; color: var(--primary); }
+  .badge-danger { background: #fff0f0; color: var(--danger); }
+  .badge-success { background: #f0fff4; color: var(--success); }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #1a1a2e;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: transform 0.3s;
+    z-index: 100;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 14px 10px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+
+  .stat-num { font-size: 24px; font-weight: 700; color: var(--primary); }
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📋 Kunlik Rejalar</h1>
+  <p id="current-date-header"></p>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('add')">➕ Qo'shish</div>
+  <div class="tab" onclick="switchTab('today')">📅 Bugun</div>
+  <div class="tab" onclick="switchTab('all')">🗂 Hammasi</div>
+</div>
+
+<div class="content">
+
+  <!-- ADD TAB -->
+  <div class="section active" id="section-add">
+    <div class="form-card">
+      <div class="form-group">
+        <label>Vazifa nomi</label>
+        <input type="text" id="task-title" placeholder="Masalan: Kitob o'qish, Uchrashuv..." />
+      </div>
+      <div class="form-group">
+        <label>Tavsif (ixtiyoriy)</label>
+        <textarea id="task-desc" placeholder="Qo'shimcha ma'lumot..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Sana</label>
+        <div class="quick-dates">
+          <button class="quick-btn active" onclick="setQuickDate(0, this)">Bugun</button>
+          <button class="quick-btn" onclick="setQuickDate(1, this)">Ertaga</button>
+          <button class="quick-btn" onclick="setQuickDate(2, this)">2 kun</button>
+          <button class="quick-btn" onclick="setQuickDate(7, this)">1 hafta</button>
+        </div>
+        <input type="date" id="task-date" />
+      </div>
+      <div class="form-group">
+        <label>Vaqt</label>
+        <div class="quick-dates">
+          <button class="quick-btn" onclick="setQuickTime('08:00', this)">8:00</button>
+          <button class="quick-btn" onclick="setQuickTime('09:00', this)">9:00</button>
+          <button class="quick-btn" onclick="setQuickTime('12:00', this)">12:00</button>
+          <button class="quick-btn" onclick="setQuickTime('18:00', this)">18:00</button>
+          <button class="quick-btn" onclick="setQuickTime('21:00', this)">21:00</button>
+        </div>
+        <input type="time" id="task-time" />
+      </div>
+      <button class="btn-add" onclick="addTask()">✅ Reja qo'shish</button>
+    </div>
+  </div>
+
+  <!-- TODAY TAB -->
+  <div class="section" id="section-today">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-total">0</div>
+        <div class="stat-label">Jami bugun</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-done" style="color: var(--success)">0</div>
+        <div class="stat-label">Bajarildi</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-left" style="color: var(--danger)">0</div>
+        <div class="stat-label">Qoldi</div>
+      </div>
+    </div>
+    <div class="tasks-list" id="today-list"></div>
+  </div>
+
+  <!-- ALL TAB -->
+  <div class="section" id="section-all">
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="setFilter('active', this)">Faol</button>
+      <button class="filter-btn" onclick="setFilter('today', this)">Bugun</button>
+      <button class="filter-btn" onclick="setFilter('upcoming', this)">Kelgusi</button>
+      <button class="filter-btn" onclick="setFilter('done', this)">Bajarilgan</button>
+    </div>
+    <div class="tasks-list" id="all-list"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+
+const params = new URLSearchParams(window.location.search);
+const USER_ID = params.get('user_id') || '0';
+const API_BASE = window.location.origin + '/api/tasks';
+
+let allTasks = [];
+let currentFilter = 'active';
+
+function getToday() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-');
+  const months = ['Yan','Feb','Mar','Apr','May','Iyn','Iyl','Avg','Sen','Okt','Noy','Dek'];
+  return `${d} ${months[parseInt(m)-1]}`;
+}
+
+function isOverdue(task) {
+  const today = getToday();
+  const now = new Date().toTimeString().slice(0,5);
+  if (task.date < today) return true;
+  if (task.date === today && task.time && task.time < now) return true;
+  return false;
+}
+
+document.getElementById('current-date-header').textContent =
+  new Date().toLocaleDateString('uz-UZ', { weekday:'long', day:'numeric', month:'long' });
+
+const todayInput = document.getElementById('task-date');
+todayInput.value = getToday();
+todayInput.min = getToday();
+
+function setQuickDate(days, btn) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  document.getElementById('task-date').value = d.toISOString().split('T')[0];
+  document.querySelectorAll('.quick-dates .quick-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function setQuickTime(time, btn) {
+  document.getElementById('task-time').value = time;
+  const parent = btn.closest('.quick-dates');
+  parent.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['add','today','all'][i] === tab);
+  });
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(`section-${tab}`).classList.add('active');
+  if (tab === 'today') renderToday();
+  if (tab === 'all') renderAll();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+async function loadTasks() {
+  try {
+    const res = await fetch(`${API_BASE}?action=get&user_id=${USER_ID}`);
+    const data = await res.json();
+    if (data.ok) allTasks = data.tasks || [];
+  } catch(e) {
+    allTasks = JSON.parse(localStorage.getItem('tasks_' + USER_ID) || '[]');
+  }
+}
+
+function saveLocal() {
+  localStorage.setItem('tasks_' + USER_ID, JSON.stringify(allTasks));
+}
+
+async function addTask() {
+  const title = document.getElementById('task-title').value.trim();
+  const date = document.getElementById('task-date').value;
+  const time = document.getElementById('task-time').value;
+
+  if (!title) { showToast('❗ Vazifa nomini kiriting'); return; }
+  if (!date) { showToast('❗ Sanani tanlang'); return; }
+  if (!time) { showToast('❗ Vaqtni tanlang'); return; }
+
+  const task = {
+    id: `${USER_ID}_${Date.now()}`,
+    title,
+    desc: document.getElementById('task-desc').value.trim(),
+    date, time,
+    done: false,
+    reminded: false,
+    created_at: new Date().toISOString()
+  };
+
+  try {
+    const res = await fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'add', user_id: USER_ID, ...task })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      allTasks.push(data.task || task);
+      saveLocal();
+    }
+  } catch(e) {
+    allTasks.push(task);
+    saveLocal();
+  }
+
+  document.getElementById('task-title').value = '';
+  document.getElementById('task-desc').value = '';
+  document.getElementById('task-time').value = '';
+  document.getElementById('task-date').value = getToday();
+  showToast('✅ Reja qo\'shildi!');
+}
+
+async function markDone(id) {
+  try {
+    await fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'done', user_id: USER_ID, id })
+    });
+  } catch(e) {}
+  const task = allTasks.find(t => t.id === id);
+  if (task) task.done = true;
+  saveLocal();
+  renderToday();
+  renderAll();
+  showToast('✅ Bajarildi!');
+}
+
+async function deleteTask(id) {
+  try {
+    await fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', user_id: USER_ID, id })
+    });
+  } catch(e) {}
+  allTasks = allTasks.filter(t => t.id !== id);
+  saveLocal();
+  renderToday();
+  renderAll();
+  showToast('🗑 O\'chirildi');
+}
+
+function taskCardHTML(task) {
+  const overdue = !task.done && isOverdue(task);
+  const cls = task.done ? 'done' : overdue ? 'overdue' : '';
+  const titleCls = task.done ? 'done-text' : '';
+  const badge = task.done
+    ? '<span class="badge badge-success">✅ Bajarildi</span>'
+    : overdue
+    ? '<span class="badge badge-danger">⚠️ Muddati o\'tdi</span>'
+    : '';
+
+  return `
+    <div class="task-card ${cls}" id="card-${task.id}">
+      <div class="task-title ${titleCls}">${task.title}${badge}</div>
+      ${task.desc ? `<div style="font-size:13px;color:#888;margin-bottom:6px">${task.desc}</div>` : ''}
+      <div class="task-meta">
+        <span>📅 ${formatDate(task.date)}</span>
+        ${task.time ? `<span>⏰ ${task.time}</span>` : ''}
+      </div>
+      ${!task.done ? `
+      <div class="task-actions">
+        <button class="btn-done" onclick="markDone('${task.id}')">✅ Bajarildi</button>
+        <button class="btn-delete" onclick="deleteTask('${task.id}')">🗑</button>
+      </div>` : ''}
+    </div>`;
+}
+
+function renderToday() {
+  const today = getToday();
+  const todayTasks = allTasks.filter(t => t.date === today);
+  const done = todayTasks.filter(t => t.done).length;
+  const left = todayTasks.filter(t => !t.done).length;
+
+  document.getElementById('stat-total').textContent = todayTasks.length;
+  document.getElementById('stat-done').textContent = done;
+  document.getElementById('stat-left').textContent = left;
+
+  const el = document.getElementById('today-list');
+  if (!todayTasks.length) {
+    el.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <p>Bugun uchun reja yo'q</p>
+      <small>«Qo'shish» bo'limiga o'ting</small>
+    </div>`;
+    return;
+  }
+  const sorted = [...todayTasks].sort((a,b) => (a.time||'').localeCompare(b.time||''));
+  el.innerHTML = sorted.map(taskCardHTML).join('');
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAll();
+}
+
+function renderAll() {
+  const today = getToday();
+  let filtered = allTasks;
+
+  if (currentFilter === 'active') filtered = allTasks.filter(t => !t.done);
+  else if (currentFilter === 'today') filtered = allTasks.filter(t => t.date === today);
+  else if (currentFilter === 'upcoming') filtered = allTasks.filter(t => !t.done && t.date > today);
+  else if (currentFilter === 'done') filtered = allTasks.filter(t => t.done);
+
+  filtered = [...filtered].sort((a,b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    return (a.time||'').localeCompare(b.time||'');
+  });
+
+  const el = document.getElementById('all-list');
+  if (!filtered.length) {
+    el.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">📂</div>
+      <p>Bu bo'limda hech narsa yo'q</p>
+    </div>`;
+    return;
+  }
+  el.innerHTML = filtered.map(taskCardHTML).join('');
+}
+
+(async () => {
+  await loadTasks();
+  renderToday();
+})();
+</script>
+</body>
+</html>
